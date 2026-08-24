@@ -1,0 +1,169 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: tools
+    description: Image editing operations
+  - name: dashboard
+    description: Usage and account overview
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /tools/{tool}/process:
+    post:
+      operationId: processImage
+      tags: [tools]
+      summary: Process an image with an editing tool
+      parameters:
+        - name: tool
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [background-remover, background-changer, image-enhancer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImageProcessInput"
+      responses:
+        "200":
+          description: Processing result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageProcessResult"
+        "400":
+          description: Invalid image or insufficient credits
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get account usage overview
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+  /activity:
+    get:
+      operationId: getActivity
+      tags: [dashboard]
+      summary: Get recent image processing activity
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    ImageProcessInput:
+      type: object
+      properties:
+        imageData:
+          type: string
+          description: Base64 data URL for the uploaded image
+        fileName:
+          type: string
+        background:
+          type: string
+          description: Preset name or custom background data URL
+        prompt:
+          type: string
+        enhancement:
+          type: string
+          enum: [standard, hd]
+      required: [imageData, fileName]
+    ImageProcessResult:
+      type: object
+      properties:
+        id:
+          type: string
+        tool:
+          type: string
+        originalImage:
+          type: string
+        processedImage:
+          type: string
+        status:
+          type: string
+          enum: [completed, development_mode]
+        creditsRemaining:
+          type: number
+        message:
+          type: string
+      required: [id, tool, originalImage, processedImage, status, creditsRemaining, message]
+    Dashboard:
+      type: object
+      properties:
+        plan:
+          type: string
+        credits:
+          type: number
+        monthlyCredits:
+          type: number
+        imagesProcessed:
+          type: number
+        activeSubscription:
+          type: boolean
+        providerConfigured:
+          type: boolean
+      required: [plan, credits, monthlyCredits, imagesProcessed, activeSubscription, providerConfigured]
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        tool:
+          type: string
+        label:
+          type: string
+        timestamp:
+          type: string
+        status:
+          type: string
+      required: [id, tool, label, timestamp, status]
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+
